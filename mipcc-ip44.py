@@ -1,13 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+import sys
+import tty
+import argparse
+from functools import partial
+
 import base64
 import json
 import sys
-from urllib.parse import unquote
 
 import requests
 import rsa
+import logging
+
+log = logging.getLogger(__name__)
+
 
 # ref https://github.com/gyje/tplink_encrypt/blob/9d93c2853169038e25f4e99ba6c4c7b833d5957f/tpencrypt.py
 def tp_encrypt(password):
@@ -64,9 +72,9 @@ def rsa_encrypt(string, pubkey):
 
 def get_stok(url, username, password):
     # encrypt tp
-    print("--encrypt password by tp")
+    log.debug("--encrypt password by tp")
     tp_password = tp_encrypt(password)
-    print("tp_password: ", tp_password)
+    log.debug("tp_password: %s", tp_password)
 
     # login
     d = {
@@ -76,7 +84,7 @@ def get_stok(url, username, password):
             "password": tp_password
         }
     }
-    print("--login")
+    log.debug("--login")
     j = post_data(url, json.dumps(d))
     stok = j["stok"]
     return stok
@@ -84,19 +92,62 @@ def get_stok(url, username, password):
 
 def post_data(base_url, data, stok=""):
     url = base_url + (("/stok=" + stok + "/ds") if stok else "")
-    print("post: ", url, " data: ", data)
+    log.debug("post: %s data: %s", url,  data)
     r = requests.post(url, data)
-    print("response: ", str(r.status_code), " ", str(r.json()))
+    log.debug("response: %s %s", str(r.status_code), str(r.json()))
     return r.json()
 
 
 if __name__ == '__main__':
-    username = str(sys.argv[1])
-    password = str(sys.argv[2])
-    base_url = str(sys.argv[3])
-    data = str(sys.argv[4])
-    print("username: ", username)
-    print("password: ", password)
-    print("base_url: ", base_url)
-    print("data: ", data)
-    post_data(base_url, data, get_stok(base_url, username, password))
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-u', '--username', type=str, default='admin', help="Username")
+    parser.add_argument(
+        '-p', '--password', type=str, default='admin', help="Password")
+    parser.add_argument(
+        '-a', '--addr', type=str, default='http://192.168.1.10:80', help="Address")
+    parser.add_argument(
+        '-d', '--data', help="data to post")
+    parser.add_argument(
+        '-i', '--interactive', action='store_true',  help="Interative PTZ mode")
+    parser.add_argument(
+        '-v', '--verbose', action='store_true',  help="Debug mode")
+    args = parser.parse_args()
+
+    print(f"username: {args.username}")
+    print(f"password: {args.password}")
+    print(f"address: {args.addr}")
+    print(f"data: {args.data}")
+
+    if args.verbose:
+        logging.basicConfig(level='DEBUG')
+
+    def send(data):
+        post_data(args.addr, data, get_stok(
+            args.addr, args.username, args.password))
+
+    key_mappings = {
+        'q': (partial(exit, 0), "quit"),
+        'w': (partial(send, '{"method":"do","ptz":{"continuous_move":{"velocity_tilt":"1.0000000","timeout":"500"}}}'), "up"),
+        's': (partial(send, '{"method":"do","ptz":{"continuous_move":{"velocity_tilt":"-1.0000000","timeout":"500"}}}'), "down"),
+        'a': (partial(send, '{"method":"do","ptz":{"continuous_move":{"velocity_pan":"-1.0000000","timeout":"500"}}}'), "left"),
+        'd': (partial(send, '{"method":"do","ptz":{"continuous_move":{"velocity_pan":"1.0000000","timeout":"500"}}}'), "right"),
+        'x': (partial(send, '{"method":"do","ptz":{"stop":{"pan":"1","tilt":"1","zoom":"1"}}}'), "stop"),
+    }
+
+    if args.interactive:
+        tty.setcbreak(sys.stdin)
+        while True:
+            for key, val in key_mappings.items():
+                print(f"[{key}]: {val[1]}  ", end='')
+            print("[1-9]: go to preset point 1-9")
+
+            key = sys.stdin.read(1)
+            if key in key_mappings:
+                key_mappings[key][0]()
+            elif '1' <= key <= '9':
+                send('{"method":"do","preset":{"goto_preset": {"id": "' + key + '"}}}')
+            else:
+                print(f"Unknown key {key}")
+    else:
+        send(args.data)

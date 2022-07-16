@@ -6,9 +6,15 @@ pip install rsa
 ```
 
 ## Example
-```
-python3 mipcc-ip44.py admin password url data
-python3 mipcc-ip44.py admin password http://192.168.2.89:80 '{"method":"do","preset":{"goto_preset": {"id": "1"}}}'
+```bash
+# Print help
+python3 mipcc-ip44.py -h
+
+# Send a single request
+python3 mipcc-ip44.py -u admin -p <password> -a http://192.168.2.89:80 -d '{"method":"do","preset":{"goto_preset": {"id": "1"}}}' -v
+
+# Interactive PTZ control
+python3 mipcc-ip44.py -u admin -p <password> -a http://192.168.2.89:80 -i
 ```
 
 ## Data Example
