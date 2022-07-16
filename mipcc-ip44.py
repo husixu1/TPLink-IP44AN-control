@@ -9,26 +9,6 @@ from urllib.parse import unquote
 import requests
 import rsa
 
-
-# usage
-# need to install packages rsa and requests
-# pip install requests
-# pip install rsa
-#
-# python mipcc.py admin password url data
-# python mipcc.py admin password http://192.168.2.89:80 '{"method":"do","preset":{"goto_preset": {"id": "1"}}}'
-#
-# data example:
-# PTZ to preset position      {"method":"do","preset":{"goto_preset": {"id": "1"}}}
-# PTZ by coord                {"method":"do","motor":{"move":{"x_coord":"10","y_coord":"0"}}}
-# PTZ horizontal by step      {"method":"do","motor":{"movestep":{"direction":"0"}}}
-# PTZ vertical by step        {"method":"do","motor":{"movestep":{"direction":"90"}}}
-# stop PTZ                    {"method":"do","motor":{"stop":"null"}}
-# add PTZ preset position     {"method":"do","preset":{"set_preset":{"name":"name","save_ptz":"1"}}}
-# lens mask                   {"method":"set","lens_mask":{"lens_mask_info":{"enabled":"on"}}}
-#
-# https://github.com/likaci/mercury-ipc-control
-
 # ref https://github.com/gyje/tplink_encrypt/blob/9d93c2853169038e25f4e99ba6c4c7b833d5957f/tpencrypt.py
 def tp_encrypt(password):
     a = 'RDpbLfCPsJZ7fiv'
@@ -83,24 +63,10 @@ def rsa_encrypt(string, pubkey):
 
 
 def get_stok(url, username, password):
-    # get key nonce
-    #print("-get rsa and nonce")
-    #j = post_data(url, json.dumps({"method": "do", "login": {}}))
-    #key = unquote(j['data']['key'])
-    #nonce = str(j['data']['nonce'])
-    #print("rsa: ", key)
-    #print("nonce: ", nonce)
-
     # encrypt tp
     print("--encrypt password by tp")
     tp_password = tp_encrypt(password)
-    #tp_password += ":" + nonce
     print("tp_password: ", tp_password)
-
-    # rsa password
-    #print("--encrypt password by rsa")
-    #rsa_password = rsa_encrypt(tp_password, key)
-    #print("rsa_password: ", rsa_password)
 
     # login
     d = {

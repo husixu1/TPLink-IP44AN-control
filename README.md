@@ -1,43 +1,44 @@
-
 ## Usage
-install packages `rsa` and `requests`   
+install packages `rsa` and `requests`
 ```bash
 pip install requests
 pip install rsa
-# or
-python2 -m pip install requests
-python2 -m pip install requests
 ```
 
 ## Example
 ```
-python2 mipcc.py admin password url data
-python2 mipcc.py admin password http://192.168.2.89:80 '{"method":"do","preset":{"goto_preset": {"id": "1"}}}'
+python3 mipcc-ip44.py admin password url data
+python3 mipcc-ip44.py admin password http://192.168.2.89:80 '{"method":"do","preset":{"goto_preset": {"id": "1"}}}'
 ```
 
-
 ## Data Example
-```json
+
+While IP44AN shares the same authentication process as MIPC451, their PTZ control protocol are different.
+
+```jsonc
 // add PTZ preset position 添加预置点
 {"method":"do","preset":{"set_preset":{"name":"name","save_ptz":"1"}}}
+
+// get PTZ preset position 查询预置点
+{"method":"do","preset":{"get_preset":{"count":"32","start_id":"0"}}}
 
 // PTZ to preset position 转动到预置点
 {"method":"do","preset":{"goto_preset": {"id": "1"}}}
 
 // PTZ by coord 按坐标转动
-{"method":"do","motor":{"move":{"x_coord":"10","y_coord":"0"}}}
+{"method":"do","ptz":{"move":{"x_coord":"10","y_coord":"0"}}}
 
 // PTZ horizontal by step 水平步进
-{"method":"do","motor":{"movestep":{"direction":"0"}}}
+{"method":"do","ptz":{"continuous_move":{"velocity_pan":"1.0000000","timeout":"1000"}}}
 
 // PTZ vertical by step 垂直步进
-{"method":"do","motor":{"movestep":{"direction":"90"}}}
+{"method":"do","ptz":{"continuous_move":{"velocity_tilt":"1.0000000","timeout":"1000"}}}
 
 // stop PTZ 停止步进
-{"method":"do","motor":{"stop":"null"}}
+{"method":"do","ptz":{"stop":{"pan":"1","tilt":"1","zoom":"1"}}}
 
 //reset PTZ 云台重置
-{"method":"do","motor":{"manual_cali":"null"}}
+{"method":"do","ptz":{"manual_cali":{}}}
 
 // lens mask 镜头遮蔽
 {"method":"set","lens_mask":{"lens_mask_info":{"enabled":"on"}}}
@@ -82,15 +83,13 @@ python2 mipcc.py admin password http://192.168.2.89:80 '{"method":"do","preset":
 //greeting volume 音量
 {"method":"set","greeter":{"chn1_greeter_audio":{"enter_volume":"77","leave_volume":"77"}}}
 //play greetings 播放语音
-{"method":"do","greeter":{"test_audio":{"force":"1"}}} 播放默认语音
-{"method":"do","greeter":{"test_audio":{"id":"4096","force":"1"}}} 播放指定语音
+{"method":"do","greeter":{"test_audio":{"force":"1"}}}             //播放默认语音
+{"method":"do","greeter":{"test_audio":{"id":"4096","force":"1"}}} //播放指定语音
 //id
 //0 无
 //12288 你好
-//4096-4104 依次为 你好欢迎光临 ..... 
+//4096-4104 依次为 你好欢迎光临 .....
 //set enter or leave greetings 设置进入或离开语音
 {"method":"set","greeter":{"chn1_greeter_audio":{"enter_audio_id":"0"}}} 无
 {"method":"set","greeter":{"chn1_greeter_audio":{"leave_audio_id":"4104"}}}
 ```
-
-ref: http://blog.xiazhiri.com/Mercury-MIPC251C-4-Reverse.html
